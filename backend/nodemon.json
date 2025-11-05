@@ -1,0 +1,15 @@
+{
+  "restartable": "rs",
+  "ignore": [
+    ".git",
+    "node_modules/**",
+    "prisma/**",
+    ".prisma/**",
+    "dist/**"
+  ],
+  "execMap": {
+    "ts": "node --import tsx/esm"
+  },
+  "ext": "ts,js,json",
+  "watch": ["src"]
+}

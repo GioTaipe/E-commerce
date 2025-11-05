@@ -1,0 +1,15 @@
+FROM node:20-slim
+# Establecer directorio de trabajo
+WORKDIR /app
+# Copiar package.json y package-lock.json primero (para aprovechar cache)
+COPY package*.json ./
+# Instalar dependencias de producción y desarrollo
+RUN npm ci
+# Copiar todo el código fuente
+COPY . .
+# Compilar la app (ej: TypeScript -> JavaScript)
+RUN npm run build
+# 7️⃣ Exponer el puerto que usará Express
+EXPOSE 3000
+# Comando para iniciar la app
+CMD ["node", "dist/server.js"]
