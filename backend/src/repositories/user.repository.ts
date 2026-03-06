@@ -1,9 +1,10 @@
 // Esta parte nos permite hablar directamente con la base de datos (prisma)
 
 import prisma from '../config/prisma.js';
+import type { Role } from '@prisma/client';
 
 export class UserRepository {
-    async createUser(data: { name: string; email: string; passwordHash: string }) { 
+    async createUser(data: { name: string; email: string; passwordHash: string; role: Role }) {
         return prisma.user.create({ data });
     }
 
@@ -15,7 +16,11 @@ export class UserRepository {
         return prisma.user.delete({ where: { id: userId } });
     }
 
-    async updateUser(userId: number, data: { name?: string; email?: string; passwordHash?: string }) {
+    async findById(userId: number) {
+        return prisma.user.findUnique({ where: { id: userId } });
+    }
+
+    async updateUser(userId: number, data: { name?: string; email?: string; passwordHash?: string; role?: Role }) {
         return prisma.user.update({ where: { id: userId }, data });
     }
 }

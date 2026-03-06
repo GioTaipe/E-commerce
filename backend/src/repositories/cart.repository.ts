@@ -20,20 +20,22 @@ export class CartRepository {
     });
   }
 
+  // [FIX] Upsert atómico en vez de check-then-act — previene race condition
+  // con requests concurrentes que duplicaban items (violando @@unique([cartId, productId]))
   async addItemToCart(cartId: number, productId: number, quantity: number) {
-    const existingItem = await prisma.cartItem.findFirst({
-      where: { cartId, productId },
+    return prisma.cartItem.upsert({
+      where: { cartId_productId: { cartId, productId } },
+      update: { quantity: { increment: quantity } },
+      create: { cartId, productId, quantity },
     });
+  }
 
-    if (existingItem) {
-      return prisma.cartItem.update({
-        where: { id: existingItem.id },
-        data: { quantity: existingItem.quantity + quantity },
-      });
-    }
-
-    return prisma.cartItem.create({
-      data: { cartId, productId, quantity },
+  async findItemByIdAndUser(cartItemId: number, userId: number) {
+    return prisma.cartItem.findFirst({
+      where: {
+        id: cartItemId,
+        cart: { userId },
+      },
     });
   }
 

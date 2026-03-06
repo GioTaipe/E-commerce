@@ -1,15 +1,31 @@
-FROM node:20-slim
-# Establecer directorio de trabajo
+FROM node:20-slim AS base
+
+# Instalar dependencias (incluyendo dev para compilar TS)
+FROM base AS deps
 WORKDIR /app
-# Copiar package.json y package-lock.json primero (para aprovechar cache)
 COPY package*.json ./
-# Instalar dependencias de producción y desarrollo
 RUN npm ci
-# Copiar todo el código fuente
+
+# Compilar TypeScript
+FROM deps AS builder
+WORKDIR /app
 COPY . .
-# Compilar la app (ej: TypeScript -> JavaScript)
+RUN npx prisma generate
 RUN npm run build
-# 7️⃣ Exponer el puerto que usará Express
+
+# Imagen de producción (solo dependencias de producción)
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/prisma ./prisma
+
 EXPOSE 3000
-# Comando para iniciar la app
+
 CMD ["node", "dist/server.js"]

@@ -4,8 +4,8 @@ import {
   MinLength,
   IsIn,
   IsOptional,
-  Matches,
 } from "class-validator";
+import type { Role } from "@prisma/client";
 
 /**
  * 🟢 Crear usuario (registro)
@@ -20,12 +20,24 @@ export class CreateUserDto {
   @IsString()
   @MinLength(6, { message: "La contraseña debe tener al menos 6 caracteres" })
   password!: string;
+}
 
-  @IsOptional()
-  @IsIn(["customer", "admin"], {
-    message: "El rol debe ser 'customer' o 'admin'",
-  })
-  role!: "customer" | "admin";
+/**
+ * 🔴 Crear usuario con rol (solo admins)
+ */
+export class CreateUserWithRoleDto {
+  @IsString()
+  name!: string;
+
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(6, { message: "La contraseña debe tener al menos 6 caracteres" })
+  password!: string;
+
+  @IsIn(["customer", "admin"], { message: "El rol debe ser 'customer' o 'admin'" })
+  role!: Role;
 }
 
 /**
@@ -59,7 +71,20 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsIn(["customer", "admin"])
-  role?: "customer" | "admin";
+  role?: Role;
+}
+
+/**
+ * 🟡 Actualizar perfil (nombre y email)
+ */
+export class UpdateProfileDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 }
 
 /**
@@ -103,6 +128,6 @@ export class UserResponseDto {
   id!: string;
   name!: string;
   email!: string;
-  role!: "customer" | "admin";
+  role!: Role;
   createdAt!: Date;
 }

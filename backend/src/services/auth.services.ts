@@ -1,47 +1,86 @@
-// Logica de negocio 
+// Logica de negocio
 import { UserRepository } from "../repositories/user.repository.js";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { config } from "../config/index.js";
-import { CreateUserDto, LoginUserDto } from "../dto/auth.dto.js";
+import { generateToken } from "../utils/jwt.js";
+import { CreateUserDto, CreateUserWithRoleDto, LoginUserDto } from "../dto/auth.dto.js";
+import { ConflictError, UnauthorizedError, NotFoundError } from "../utils/errors.js";
 
 export class AuthService {
-  private userRepo = new UserRepository();
+  constructor(private userRepo = new UserRepository()) {}
 
   async register(data: CreateUserDto) {
     const existing = await this.userRepo.findByEmail(data.email);
-    if (existing) throw new Error("Email already in use");
+    if (existing) throw new ConflictError("El email ya está en uso");
+
     const hashed = await bcrypt.hash(data.password, 10);
-    const user = await this.userRepo.createUser({ name: data.name, email: data.email, passwordHash: hashed });
-    console.log(" User registered:", user);
-    
+    const user = await this.userRepo.createUser({
+      name: data.name,
+      email: data.email,
+      passwordHash: hashed,
+      role: "customer"
+    });
+
     return user;
   }
 
+  // [FIX] Eliminado console.log que exponía credenciales del usuario
   async login(data: LoginUserDto) {
     const user = await this.userRepo.findByEmail(data.email);
-    if (!user) throw new Error("User not found");
+
+    // Validar credenciales sin revelar si el usuario existe
+    if (!user) {
+      throw new UnauthorizedError("Email o contraseña inválidos");
+    }
 
     const valid = await bcrypt.compare(data.password, user.passwordHash);
-    if (!valid) throw new Error("Invalid credentials");
+    if (!valid) {
+      throw new UnauthorizedError("Email o contraseña inválidos");
+    }
 
-    const token = jwt.sign({ id: user.id }, config.jwtSecret, { expiresIn: "1h" });
-    return { user, token };
+    // Generar token con toda la información necesaria
+    const token = generateToken({
+      id: user.id,
+      email: user.email,
+      role: user.role
+    });
+
+    // Retornar usuario sin el passwordHash
+    const { passwordHash, ...userWithoutPassword } = user;
+    return { user: userWithoutPassword, token };
+  }
+
+  async createUserWithRole(data: CreateUserWithRoleDto) {
+    const existing = await this.userRepo.findByEmail(data.email);
+    if (existing) throw new ConflictError("El email ya está en uso");
+
+    const hashed = await bcrypt.hash(data.password, 10);
+    const user = await this.userRepo.createUser({
+      name: data.name,
+      email: data.email,
+      passwordHash: hashed,
+      role: data.role,
+    });
+
+    return user;
   }
 
   async deleteUser(userId: number) {
     const user = await this.userRepo.deleteUser(userId);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new NotFoundError("Usuario no encontrado");
     return user;
   }
-// Todavia no implementado en el controlador ni en las rutas
+  // [FIX] Construye objeto con passwordHash en vez de pasar password directo al repo
+  // — antes el campo password nunca llegaba a Prisma (el repo espera passwordHash)
   async updateUser(userId: number, data: Partial<CreateUserDto>) {
+    const updateData: { name?: string; email?: string; passwordHash?: string } = {};
+    if (data.name) updateData.name = data.name;
+    if (data.email) updateData.email = data.email;
     if (data.password) {
-      data.password = await bcrypt.hash(data.password, 10);
+      updateData.passwordHash = await bcrypt.hash(data.password, 10);
     }
 
-    const user = await this.userRepo.updateUser(userId, data);
-    if (!user) throw new Error("User not found");
+    const user = await this.userRepo.updateUser(userId, updateData);
+    if (!user) throw new NotFoundError("Usuario no encontrado");
     return user;
   }
 }

@@ -1,62 +1,46 @@
 import type { Request, Response } from "express";
 import { CartService } from "../services/cart.service.js";
-
-const cartService = new CartService();
+import { UnauthorizedError } from "../utils/errors.js";
 
 export class CartController {
-  getCart = async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id || req.user?._id;
-      if (!userId) return res.status(401).json({ error: "Usuario no autenticado" });
+  constructor(private cartService = new CartService()) {}
+  // [FIX] Eliminado fallback a _id (no existe en JwtUserPayload, era residuo de MongoDB)
+  private getUserId(req: Request): number {
+    const userId = req.user?.id;
+    if (!userId) throw new UnauthorizedError("Usuario no autenticado");
+    return Number(userId);
+  }
 
-      const cart = await cartService.getCart(Number(userId));
-      res.json(cart);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
+  getCart = async (req: Request, res: Response) => {
+    const userId = this.getUserId(req);
+    const cart = await this.cartService.getCart(userId);
+    res.json(cart);
   };
 
   addToCart = async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id || req.user?._id;
-      if (!userId) return res.status(401).json({ error: "Usuario no autenticado" });
-
-      const item = await cartService.addToCart(Number(userId), req.body);
-      res.status(201).json(item);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
+    const userId = this.getUserId(req);
+    
+    const item = await this.cartService.addToCart(userId, req.body);
+    res.status(201).json(item);
   };
 
   updateItem = async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      const item = await cartService.updateItem(Number(id), req.body);
-      res.json(item);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
+    const userId = this.getUserId(req);
+    const { id } = req.params;
+    const item = await this.cartService.updateItem(userId, Number(id), req.body);
+    res.json(item);
   };
 
   removeItem = async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      await cartService.removeItem(Number(id));
-      res.sendStatus(204);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
+    const userId = this.getUserId(req);
+    const { id } = req.params;
+    await this.cartService.removeItem(userId, Number(id));
+    res.sendStatus(204);
   };
 
   clearCart = async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id || req.user?._id;
-      if (!userId) return res.status(401).json({ error: "Usuario no autenticado" });
-
-      await cartService.clearCart(Number(userId));
-      res.sendStatus(204);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
+    const userId = this.getUserId(req);
+    await this.cartService.clearCart(userId);
+    res.sendStatus(204);
   };
 }

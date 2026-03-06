@@ -1,22 +1,24 @@
 import prisma from "../config/prisma.js";
 import { OrderRepository } from "../repositories/order.repository.js";
 import { CartRepository } from "../repositories/cart.repository.js";
-
-const orderRepository = new OrderRepository();
-const cartRepository = new CartRepository();
+import { BadRequestError, NotFoundError } from "../utils/errors.js";
 
 export class OrderService {
+  constructor(
+    private orderRepository = new OrderRepository(),
+    private cartRepository = new CartRepository(),
+  ) {}
   async createOrder(userId: number) {
     // 1️⃣ Obtener el carrito
-    const cart = await cartRepository.getCartByUserId(userId);
+    const cart = await this.cartRepository.getCartByUserId(userId);
     if (!cart || cart.items.length === 0) {
-      throw new Error("El carrito está vacío");
+      throw new BadRequestError("El carrito está vacío");
     }
 
     // 2️⃣ Calcular total
     let total = 0;
     for (const item of cart.items) {
-      total += item.quantity * item.product.price;
+      total += item.quantity * Number(item.product.price);
     }
 
     // 3️⃣ Transacción
@@ -40,12 +42,21 @@ export class OrderService {
 
       await tx.orderItem.createMany({ data: orderItemsData });
 
-      // Reducir stock de productos
+      // Reducir stock de productos (verificación atómica para evitar stock negativo)
       for (const item of cart.items) {
-        await tx.product.update({
-          where: { id: item.productId },
+        const updated = await tx.product.updateMany({
+          where: {
+            id: item.productId,
+            stock: { gte: item.quantity },
+          },
           data: { stock: { decrement: item.quantity } },
         });
+
+        if (updated.count === 0) {
+          throw new BadRequestError(
+            `Stock insuficiente para el producto "${item.product.name}"`
+          );
+        }
       }
 
       // Vaciar el carrito
@@ -58,12 +69,12 @@ export class OrderService {
   }
 
   async getUserOrders(userId: number) {
-    return orderRepository.findAllByUser(userId);
+    return this.orderRepository.findAllByUser(userId);
   }
 
   async getOrderById(userId: number, orderId: number) {
-    const order = await orderRepository.findById(orderId, userId);
-    if (!order) throw new Error("Orden no encontrada");
+    const order = await this.orderRepository.findById(orderId, userId);
+    if (!order) throw new NotFoundError("Orden no encontrada");
     return order;
   }
 }

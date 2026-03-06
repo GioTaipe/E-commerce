@@ -2,20 +2,32 @@
 
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { config } from "../config/index.js";
+import type { Role } from "@prisma/client";
 
-// 👇 Aquí defines el tipo de datos que contendrá tu token
+// Payload del token JWT con campos requeridos
 export interface JwtUserPayload extends JwtPayload {
-  _id: number;
+  id: number;
   email: string;
-  role?: string;
+  role: Role;
 }
 
-// ✅ Función para generar tokens
+// [FIX] Usa config.jwtExpiry en vez de hardcodear "24h" — alineado con la config centralizada
 export const generateToken = (payload: JwtUserPayload) => {
-  return jwt.sign(payload, config.jwtSecret, { expiresIn: "1h" });
+  const options: jwt.SignOptions = {};
+  options.expiresIn = config.jwtExpiry as string & jwt.SignOptions["expiresIn"];
+  return jwt.sign(payload, config.jwtSecret, options);
 };
 
-// ✅ Función para verificar tokens
+// [FIX] Type guard real para validar estructura del payload JWT en vez de cast inseguro
+function isJwtUserPayload(payload: JwtPayload): payload is JwtUserPayload {
+  return (
+    typeof payload.id === "number" &&
+    typeof payload.email === "string" &&
+    typeof payload.role === "string"
+  );
+}
+
+// Verificar y decodificar token JWT
 export const verifyToken = (token: string): JwtUserPayload => {
   const decoded = jwt.verify(token, config.jwtSecret);
 
@@ -23,6 +35,10 @@ export const verifyToken = (token: string): JwtUserPayload => {
     throw new Error("Invalid token payload");
   }
 
-  return decoded as JwtUserPayload;
+  if (!isJwtUserPayload(decoded)) {
+    throw new Error("Token payload does not match expected structure");
+  }
+
+  return decoded;
 };
 

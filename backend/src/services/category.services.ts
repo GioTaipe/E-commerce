@@ -1,25 +1,26 @@
-import { CreateCategoryDto, UpdateCategoryDto } from "../dto/category.dto";
-import { CategoryRepository } from "../repositories/category.repository";
+import { CreateCategoryDto, UpdateCategoryDto } from "../dto/category.dto.js";
+import { CategoryRepository } from "../repositories/category.repository.js";
 
-const categoryRepository = new CategoryRepository();    
 export class CategoryService {
+    constructor(private categoryRepository = new CategoryRepository()) {}
+
     async createCategory(data: CreateCategoryDto) {
-        return categoryRepository.create(data);
+        return this.categoryRepository.create(data);
     }
 
     async updateCategory(id: number, data: UpdateCategoryDto) {
-        return categoryRepository.update(id, data);
+        return this.categoryRepository.update(id, data);
     }
 
     async deleteCategory(id: number) {
-        return categoryRepository.delete(id);
+        return this.categoryRepository.delete(id);
     }
 
     async findAllCategories() {
-        return categoryRepository.findAll();
+        return this.categoryRepository.findAll();
     }
 
     async findCategoryById(id: number) {
-        return categoryRepository.findById(id);
+        return this.categoryRepository.findById(id);
     }
 }

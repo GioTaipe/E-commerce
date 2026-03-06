@@ -7,12 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  customer
+  admin
+}
+
+enum OrderStatus {
+  pending
+  shipped
+  delivered
+  cancelled
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   name         String
   email        String   @unique
   passwordHash String
-  role         String   @default("customer")
+  role         Role     @default(customer)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   cart         Cart?
@@ -23,6 +35,8 @@ model Category {
   id          Int       @id @default(autoincrement())
   name        String
   description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   products    Product[]
 }
 
@@ -30,17 +44,18 @@ model Product {
   id          Int         @id @default(autoincrement())
   name        String
   description String?
-  price       Float
+  price       Decimal     @db.Decimal(10, 2)
   imageUrl    String
   stock       Int
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   categoryId  Int?
-  cartItems   CartItem[] 
+  cartItems   CartItem[]
   orderItems  OrderItem[]
   category    Category?   @relation(fields: [categoryId], references: [id])
 
   @@index([categoryId], map: "Product_categoryId_fkey")
+  @@index([name])
 }
 
 model Cart {
@@ -60,6 +75,7 @@ model CartItem {
   cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@unique([cartId, productId])
   @@index([cartId], map: "CartItem_cartId_fkey")
   @@index([productId], map: "CartItem_productId_fkey")
 }
@@ -67,14 +83,15 @@ model CartItem {
 model Order {
   id        Int         @id @default(autoincrement())
   userId    Int
-  total     Float
+  total     Decimal     @db.Decimal(10, 2)
   createdAt DateTime    @default(now())
-  status    String      @default("pending")
+  status    OrderStatus @default(pending)
   updatedAt DateTime    @updatedAt
   user      User        @relation(fields: [userId], references: [id])
   items     OrderItem[]
 
   @@index([userId], map: "Order_userId_fkey")
+  @@index([status])
 }
 
 model OrderItem {
@@ -82,9 +99,9 @@ model OrderItem {
   orderId         Int
   productId       Int
   quantity        Int
-  priceAtPurchase Float
+  priceAtPurchase Decimal @db.Decimal(10, 2)
   order           Order   @relation(fields: [orderId], references: [id])
-  product         Product @relation(fields: [productId], references: [id])
+  product         Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   @@index([orderId], map: "OrderItem_orderId_fkey")
   @@index([productId], map: "OrderItem_productId_fkey")

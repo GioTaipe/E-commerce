@@ -4,8 +4,8 @@ import {
   Min,
   IsNumber,
   IsOptional,
-  Matches,
 } from "class-validator";
+import { Type } from "class-transformer";
 
 /**
  * 🟢 Crear producto
@@ -17,16 +17,18 @@ export class CreateProductDto {
   @IsString()
   description!: string;
 
-  @IsNumber()
-  @Matches(/^\d+(\.\d{1,2})?$/, { message: "El precio debe ser un número válido" })
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
   price!: number;
 
-  @IsString()
-  imageUrl!: string;
-
-  @IsNumber()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
   stock!: number;
 
+  // [FIX] Agregado @IsOptional — categoryId es opcional según el schema Prisma
+  @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1, { message: "Debe proporcionar un ID de categoría válido" })
   categoryId?: number;
@@ -44,16 +46,18 @@ export class UpdateProductDto {
   @IsString()
   description?: string;
 
+  // [FIX] Tipo unificado con CreateProductDto — price siempre es number
   @IsOptional()
-  @IsString()
-  @Matches(/^\d+(\.\d{1,2})?$/, { message: "El precio debe ser un número válido" })
-  price?: string;
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: "El precio debe ser un número válido con máximo 2 decimales" })
+  price?: number;
 
   @IsOptional()
   @IsString()
   imageUrl?: string;
 
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1, { message: "Debe proporcionar un ID de categoría válido" })
   categoryId?: number;

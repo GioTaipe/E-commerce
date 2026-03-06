@@ -1,19 +1,14 @@
 // Repositorio accede a la base de datos
 import prisma from '../config/prisma.js';
-import { CreateProductDto } from '../dto/product.dto.js';
+import type { Prisma } from '@prisma/client';
 
 export class ProductRepository {
 
-    async create(data: CreateProductDto) {
-        return prisma.product.create({
-            data: {
-                ...data,
-                imageUrl: data.imageUrl ?? '',
-            },
-        });
+    async create(data: Prisma.ProductUncheckedCreateInput) {
+        return prisma.product.create({ data });
     }
 
-    async update(id: number, data: any) {
+    async update(id: number, data: Prisma.ProductUncheckedUpdateInput) {
         return prisma.product.update({
             where: { id },
             data,
@@ -27,7 +22,11 @@ export class ProductRepository {
     }
 
     async findAll() {
-        return prisma.product.findMany();
+        return prisma.product.findMany({
+            include:{
+                category:true
+            }
+        });
     }
 
     async findById(id: number) {
