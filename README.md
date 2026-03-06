@@ -1,6 +1,6 @@
 # MyShop — E-commerce Full-Stack
 
-Aplicación e-commerce completa con API REST y frontend moderno, orquestada con Docker Compose.
+Aplicación e-commerce completa con API REST y frontend moderno.
 
 ## Tecnologías
 
@@ -279,13 +279,3 @@ npm run test
 | `MYSQL_PASSWORD` | Docker | Contraseña del usuario MySQL |
 
 ---
-
-## Convenciones del Proyecto
-
-- **Idioma de la UI**: Español
-- **Identificadores de código**: Inglés
-- **ES Modules**: El backend usa `"type": "module"` — imports internos con extensión `.js`
-- **Nombrado de archivos**: `<nombre>.<tipo>.ts` (ej. `product.controller.ts`, `auth.services.ts`)
-- **TypeScript strict**: Con `experimentalDecorators` y `emitDecoratorMetadata`
-- **Respuestas de error**: `{ error: string }` o `{ errors: string[] }` para validaciones
-- **Path alias**: `@/` en el frontend mapea a la raíz del proyecto
