@@ -172,7 +172,7 @@ export default function LoginPage() {
               disabled={isSubmitting}
               className="mt-2 w-full rounded-full bg-dark py-3.5 text-sm font-semibold uppercase tracking-widest text-white hover:bg-ink disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
             >
-              {isSubmitting ? <Loader size="sm" /> : "Iniciar sesion"}
+              {isSubmitting ? <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : "Iniciar sesion"}
             </button>
           </form>
         ) : (
@@ -256,7 +256,7 @@ export default function LoginPage() {
               disabled={isSubmitting}
               className="mt-2 w-full rounded-full bg-dark py-3.5 text-sm font-semibold uppercase tracking-widest text-white hover:bg-ink disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
             >
-              {isSubmitting ? <Loader size="sm" /> : "Crear cuenta"}
+              {isSubmitting ? <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : "Crear cuenta"}
             </button>
           </form>
         )}

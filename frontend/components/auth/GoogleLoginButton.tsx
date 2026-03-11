@@ -1,83 +1,74 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import Script from "next/script";
+import { useCallback, useEffect, useRef } from "react";
 
 interface GoogleLoginButtonProps {
   onSuccess: (credential: string) => void;
   onError?: () => void;
 }
 
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: {
-            client_id: string;
-            callback: (response: { credential: string }) => void;
-          }) => void;
-          renderButton: (
-            element: HTMLElement,
-            config: {
-              theme?: string;
-              size?: string;
-              text?: string;
-              shape?: string;
-              width?: number;
-            }
-          ) => void;
-        };
-      };
-    };
-  }
-}
-
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+const REDIRECT_URI = typeof window !== "undefined" ? window.location.origin : "";
 
 export default function GoogleLoginButton({ onSuccess, onError }: GoogleLoginButtonProps) {
-  const buttonRef = useRef<HTMLDivElement>(null);
-  const initializedRef = useRef(false);
+  const callbackRef = useRef(onSuccess);
+  const errorRef = useRef(onError);
+  callbackRef.current = onSuccess;
+  errorRef.current = onError;
 
-  useEffect(() => {
-    if (initializedRef.current || !window.google || !buttonRef.current) return;
-    initGoogle();
+  const handleMessage = useCallback((event: MessageEvent) => {
+    if (event.origin !== window.location.origin) return;
+    if (event.data?.type === "google-auth-callback" && event.data?.credential) {
+      callbackRef.current(event.data.credential);
+    }
   }, []);
 
-  function initGoogle() {
-    if (initializedRef.current || !window.google || !buttonRef.current) return;
-    initializedRef.current = true;
+  useEffect(() => {
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [handleMessage]);
 
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: (response) => {
-        if (response.credential) {
-          onSuccess(response.credential);
-        } else {
-          onError?.();
-        }
-      },
-    });
+  const handleClick = () => {
+    const scope = "openid email profile";
+    const authUrl =
+      `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${encodeURIComponent(GOOGLE_CLIENT_ID)}` +
+      `&redirect_uri=${encodeURIComponent(REDIRECT_URI + "/auth/google/callback")}` +
+      `&response_type=id_token` +
+      `&scope=${encodeURIComponent(scope)}` +
+      `&nonce=${crypto.randomUUID()}`;
 
-    window.google.accounts.id.renderButton(buttonRef.current, {
-      theme: "outline",
-      size: "large",
-      text: "continue_with",
-      shape: "pill",
-      width: 400,
-    });
-  }
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+
+    const popup = window.open(
+      authUrl,
+      "google-auth",
+      `width=${width},height=${height},left=${left},top=${top},popup=true`
+    );
+
+    if (!popup) {
+      errorRef.current?.();
+    }
+  };
 
   if (!GOOGLE_CLIENT_ID) return null;
 
   return (
-    <>
-      <Script
-        src="https://accounts.google.com/gsi/client"
-        onLoad={initGoogle}
-        strategy="afterInteractive"
-      />
-      <div ref={buttonRef} className="flex justify-center" />
-    </>
+    <button
+      type="button"
+      onClick={handleClick}
+      className="flex w-full items-center justify-center gap-3 rounded-full border border-border bg-white px-5 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+    >
+      <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+        <path d="M9.003 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9.003 18z" fill="#34A853"/>
+        <path d="M3.964 10.712c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.96H.957C.347 6.175 0 7.55 0 9.002c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+        <path d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.428 0 9.002 0 5.482 0 2.438 2.017.957 4.96L3.964 7.29c.708-2.127 2.692-3.71 5.036-3.71z" fill="#EA4335"/>
+      </svg>
+      Continuar con Google
+    </button>
   );
 }
