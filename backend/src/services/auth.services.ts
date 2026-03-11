@@ -4,9 +4,13 @@ import bcrypt from "bcrypt";
 import { generateToken } from "../utils/jwt.js";
 import { CreateUserDto, CreateUserWithRoleDto, LoginUserDto } from "../dto/auth.dto.js";
 import { ConflictError, UnauthorizedError, NotFoundError } from "../utils/errors.js";
+import { GoogleTokenService } from "./google-token.service.js";
 
 export class AuthService {
-  constructor(private userRepo = new UserRepository()) {}
+  constructor(
+    private userRepo = new UserRepository(),
+    private googleTokenService = new GoogleTokenService()
+  ) {}
 
   async register(data: CreateUserDto) {
     const existing = await this.userRepo.findByEmail(data.email);
@@ -27,8 +31,8 @@ export class AuthService {
   async login(data: LoginUserDto) {
     const user = await this.userRepo.findByEmail(data.email);
 
-    // Validar credenciales sin revelar si el usuario existe
-    if (!user) {
+    // Validar credenciales sin revelar si el usuario existe o usa Google
+    if (!user || !user.passwordHash) {
       throw new UnauthorizedError("Email o contraseña inválidos");
     }
 
@@ -69,6 +73,39 @@ export class AuthService {
     if (!user) throw new NotFoundError("Usuario no encontrado");
     return user;
   }
+  async googleLogin(credential: string) {
+    const payload = await this.googleTokenService.verifyIdToken(credential);
+
+    // Buscar usuario existente por email
+    let user = await this.userRepo.findByEmail(payload.email);
+
+    if (!user) {
+      // Crear nuevo usuario con datos de Google (sin password)
+      user = await this.userRepo.createUser({
+        name: payload.name,
+        email: payload.email,
+        googleId: payload.sub,
+        profileImage: payload.picture,
+        role: "customer",
+      });
+    } else if (!user.googleId) {
+      // Vincular cuenta existente con Google
+      user = await this.userRepo.updateUser(user.id, {
+        googleId: payload.sub,
+        profileImage: payload.picture,
+      });
+    }
+
+    const token = generateToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    const { passwordHash, ...userWithoutPassword } = user;
+    return { user: userWithoutPassword, token };
+  }
+
   // [FIX] Construye objeto con passwordHash en vez de pasar password directo al repo
   // — antes el campo password nunca llegaba a Prisma (el repo espera passwordHash)
   async updateUser(userId: number, data: Partial<CreateUserDto>) {

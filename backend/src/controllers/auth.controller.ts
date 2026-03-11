@@ -26,6 +26,12 @@ export class AuthController {
     res.json(result);
   };
 
+  googleLogin = async (req: Request, res: Response) => {
+    const { credential } = req.body;
+    const result = await this.authService.googleLogin(credential);
+    res.json(result);
+  };
+
   updateProfile = async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const data: UpdateProfileDto = req.body;

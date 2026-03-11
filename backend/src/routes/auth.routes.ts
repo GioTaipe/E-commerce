@@ -4,7 +4,7 @@ import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { AuthController } from "../controllers/auth.controller.js";
 import { validateDto } from "../middleware/validation.middleware.js";
-import { CreateUserDto, CreateUserWithRoleDto, LoginUserDto, UpdateProfileDto } from "../dto/auth.dto.js";
+import { CreateUserDto, CreateUserWithRoleDto, GoogleLoginDto, LoginUserDto, UpdateProfileDto } from "../dto/auth.dto.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { adminOnly } from "../middleware/role.middleware.js";
 
@@ -22,6 +22,7 @@ const authLimiter = rateLimit({
 
 router.post("/register", authLimiter, validateDto(CreateUserDto), controller.register);
 router.post("/login", authLimiter, validateDto(LoginUserDto), controller.login);
+router.post("/google", authLimiter, validateDto(GoogleLoginDto), controller.googleLogin);
 router.post("/create-user", authMiddleware, adminOnly, validateDto(CreateUserWithRoleDto), controller.createUserWithRole);
 router.put("/profile", authMiddleware, validateDto(UpdateProfileDto), controller.updateProfile);
 router.delete("/delete", authMiddleware, controller.deleteUser);

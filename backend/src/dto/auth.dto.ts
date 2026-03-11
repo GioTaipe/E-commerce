@@ -121,6 +121,14 @@ export class ResetPasswordDto {
 }
 
 /**
+ * 🔵 Login con Google (ID token)
+ */
+export class GoogleLoginDto {
+  @IsString()
+  credential!: string;
+}
+
+/**
  * ⚪ Respuesta pública (lo que se devuelve al cliente)
  *  – No contiene contraseña ni datos sensibles.
  */
