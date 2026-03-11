@@ -18,7 +18,7 @@ app.use(cors({origin: [
     'http://localhost:3000',
     'https://e-commerce-1-ap6o.onrender.com'
   ],
-  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS']
+  methods: ['GET', 'POST', 'PATCH','PUT' ,'DELETE', 'OPTIONS']
 }));
 
 // Parsear JSON con límite de tamaño
