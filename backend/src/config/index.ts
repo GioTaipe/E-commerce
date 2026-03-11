@@ -14,6 +14,6 @@ export const config = {
     jwtSecret: getRequiredEnv("JWT_SECRET"),
     jwtExpiry: process.env.JWT_EXPIRY || "1h",
     dbUrl: getRequiredEnv("DATABASE_URL"),
-    frontendUrl: process.env.FRONTEND_URL || "http://localhost:3000",
+    frontendUrl: process.env.FRONTEND_URL || "https://e-commerce-1-ap6o.onrender.com/",
     googleClientId: process.env.GOOGLE_CLIENT_ID || "",
 };
