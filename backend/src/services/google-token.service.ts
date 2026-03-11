@@ -1,5 +1,6 @@
-import { config } from "../config/index.js";
 import { UnauthorizedError } from "../utils/errors.js";
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 
 interface GoogleTokenPayload {
   iss: string;
@@ -37,7 +38,7 @@ export class GoogleTokenService {
     }
 
     // Validar audience (debe coincidir con nuestro Client ID)
-    if (payload.aud !== config.googleClientId) {
+    if (payload.aud !== GOOGLE_CLIENT_ID) {
       throw new UnauthorizedError("Token de Google inválido: audience incorrecto");
     }
 
