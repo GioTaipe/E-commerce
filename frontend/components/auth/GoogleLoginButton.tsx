@@ -77,16 +77,15 @@ export default function GoogleLoginButton({ onSuccess, onError }: GoogleLoginBut
     }
 
     // Polling como fallback — el StorageEvent puede no dispararse si el popup cierra muy rápido
-    pollingRef.current = setInterval(() => {
-      consumeCredential();
-      // Si el popup se cerró y no hay credential, dejar de intentar
-      if (popup.closed && !localStorage.getItem(STORAGE_KEY)) {
-        if (pollingRef.current) {
-          clearInterval(pollingRef.current);
-          pollingRef.current = null;
-        }
+    pollingRef.current = setInterval(consumeCredential, 300);
+
+    // Dejar de intentar después de 2 minutos
+    setTimeout(() => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
       }
-    }, 300);
+    }, 120_000);
   };
 
   if (!GOOGLE_CLIENT_ID) return null;
