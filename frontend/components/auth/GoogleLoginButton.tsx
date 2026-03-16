@@ -8,10 +8,7 @@ interface GoogleLoginButtonProps {
 }
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
-//const REDIRECT_URI = typeof window !== "undefined" ? window.location.origin : "";
 const REDIRECT_URI = process.env.NEXT_PUBLIC_APP_URL_FRONTEND ?? (typeof window !== "undefined" ? window.location.origin : "");
-console.log("REDIRECT_URI:", REDIRECT_URI); // 👈
-console.log("APP_URL env:", process.env.NEXT_PUBLIC_APP_URL); 
 export default function GoogleLoginButton({ onSuccess, onError }: GoogleLoginButtonProps) {
   const callbackRef = useRef(onSuccess);
   const errorRef = useRef(onError);
@@ -45,6 +42,9 @@ export default function GoogleLoginButton({ onSuccess, onError }: GoogleLoginBut
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
 
+    console.log("[GoogleAuth] authUrl:", authUrl);
+    console.log("[GoogleAuth] REDIRECT_URI:", REDIRECT_URI);
+
     const popup = window.open(
       authUrl,
       "google-auth",
@@ -52,6 +52,7 @@ export default function GoogleLoginButton({ onSuccess, onError }: GoogleLoginBut
     );
 
     if (!popup) {
+      console.error("[GoogleAuth] Popup bloqueado por el navegador");
       errorRef.current?.();
     }
   };
