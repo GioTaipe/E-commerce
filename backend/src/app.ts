@@ -16,7 +16,8 @@ const app = express();
 app.use(helmet());
 app.use(cors({origin: [
     'http://localhost:3000',
-    'https://e-commerce-production-8d3a.up.railway.app'
+    'https://e-commerce-production-8d3a.up.railway.app',
+    'https://e-commerce-weld-gamma-28.vercel.app'
   ],
   methods: ['GET', 'POST', 'PATCH','PUT' ,'DELETE', 'OPTIONS']
 }));
