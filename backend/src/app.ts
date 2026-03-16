@@ -16,7 +16,7 @@ const app = express();
 app.use(helmet());
 app.use(cors({origin: [
     'http://localhost:3000',
-    'https://e-commerce-1-ap6o.onrender.com'
+    'https://e-commerce-production-8d3a.up.railway.app'
   ],
   methods: ['GET', 'POST', 'PATCH','PUT' ,'DELETE', 'OPTIONS']
 }));
