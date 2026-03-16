@@ -4,7 +4,7 @@ import type { Product, Category } from "@/types/product";
 import ProductsPageClient from "./ProductsPageClient";
 
 export const revalidate = 60; // 👈 ISR: revalida cada 60s
-// export const dynamic = 'force-dynamic'; // 👈 alternativa: siempre SSR
+export const dynamic = 'force-dynamic'; // 👈 alternativa: siempre SSR
 
 export default async function ProductsPage() {
   let products: Product[] = [];
