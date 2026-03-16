@@ -15,24 +15,40 @@ const STORAGE_KEY = "google-auth-credential";
 export default function GoogleLoginButton({ onSuccess, onError }: GoogleLoginButtonProps) {
   const callbackRef = useRef(onSuccess);
   const errorRef = useRef(onError);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   callbackRef.current = onSuccess;
   errorRef.current = onError;
 
+  const consumeCredential = () => {
+    const credential = localStorage.getItem(STORAGE_KEY);
+    if (credential) {
+      localStorage.removeItem(STORAGE_KEY);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+      callbackRef.current(credential);
+    }
+  };
+
   useEffect(() => {
-    // Escuchar cambios en localStorage desde el popup
+    // StorageEvent se dispara en otras pestañas cuando localStorage cambia
     const handleStorage = (event: StorageEvent) => {
       if (event.key === STORAGE_KEY && event.newValue) {
-        callbackRef.current(event.newValue);
-        localStorage.removeItem(STORAGE_KEY);
+        consumeCredential();
       }
     };
 
     window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
   }, []);
 
   const handleClick = () => {
-    // Limpiar cualquier credential anterior
     localStorage.removeItem(STORAGE_KEY);
 
     const scope = "openid email profile";
@@ -57,7 +73,20 @@ export default function GoogleLoginButton({ onSuccess, onError }: GoogleLoginBut
 
     if (!popup) {
       errorRef.current?.();
+      return;
     }
+
+    // Polling como fallback — el StorageEvent puede no dispararse si el popup cierra muy rápido
+    pollingRef.current = setInterval(() => {
+      consumeCredential();
+      // Si el popup se cerró y no hay credential, dejar de intentar
+      if (popup.closed && !localStorage.getItem(STORAGE_KEY)) {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+      }
+    }, 300);
   };
 
   if (!GOOGLE_CLIENT_ID) return null;
