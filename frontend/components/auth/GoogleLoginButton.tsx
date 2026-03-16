@@ -1,56 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-
-interface GoogleLoginButtonProps {
-  onSuccess: (credential: string) => void;
-  onError?: () => void;
-}
-
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
 const REDIRECT_URI = process.env.NEXT_PUBLIC_APP_URL_FRONTEND ?? (typeof window !== "undefined" ? window.location.origin : "");
 
-const STORAGE_KEY = "google-auth-credential";
+interface GoogleLoginButtonProps {
+  onSuccess?: (credential: string) => void;
+  onError?: () => void;
+}
 
-export default function GoogleLoginButton({ onSuccess, onError }: GoogleLoginButtonProps) {
-  const callbackRef = useRef(onSuccess);
-  const errorRef = useRef(onError);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  callbackRef.current = onSuccess;
-  errorRef.current = onError;
-
-  const consumeCredential = () => {
-    const credential = localStorage.getItem(STORAGE_KEY);
-    if (credential) {
-      localStorage.removeItem(STORAGE_KEY);
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-      callbackRef.current(credential);
-    }
-  };
-
-  useEffect(() => {
-    // StorageEvent se dispara en otras pestañas cuando localStorage cambia
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY && event.newValue) {
-        consumeCredential();
-      }
-    };
-
-    window.addEventListener("storage", handleStorage);
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
-    };
-  }, []);
-
+export default function GoogleLoginButton({ onError }: GoogleLoginButtonProps) {
   const handleClick = () => {
-    localStorage.removeItem(STORAGE_KEY);
-
     const scope = "openid email profile";
     const authUrl =
       `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -60,32 +19,8 @@ export default function GoogleLoginButton({ onSuccess, onError }: GoogleLoginBut
       `&scope=${encodeURIComponent(scope)}` +
       `&nonce=${crypto.randomUUID()}`;
 
-    const width = 500;
-    const height = 600;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-
-    const popup = window.open(
-      authUrl,
-      "google-auth",
-      `width=${width},height=${height},left=${left},top=${top},popup=true`
-    );
-
-    if (!popup) {
-      errorRef.current?.();
-      return;
-    }
-
-    // Polling como fallback — el StorageEvent puede no dispararse si el popup cierra muy rápido
-    pollingRef.current = setInterval(consumeCredential, 300);
-
-    // Dejar de intentar después de 2 minutos
-    setTimeout(() => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-    }, 120_000);
+    // Redirect en la misma ventana — evita todos los problemas de COOP/popup
+    window.location.href = authUrl;
   };
 
   if (!GOOGLE_CLIENT_ID) return null;

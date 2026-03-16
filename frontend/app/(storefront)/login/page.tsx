@@ -268,7 +268,6 @@ export default function LoginPage() {
         </div>
 
         <GoogleLoginButton
-          onSuccess={handleGoogleLogin}
           onError={() => setErrorMessage("Error al iniciar sesion con Google")}
         />
 

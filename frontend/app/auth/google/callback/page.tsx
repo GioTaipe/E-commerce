@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-const STORAGE_KEY = "google-auth-credential";
+import { useRouter } from "next/navigation";
+import { authService } from "@/services/auth.service";
+import { useAuthStore } from "@/store/auth.store";
 
 export default function GoogleCallbackPage() {
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const login = useAuthStore((s) => s.login);
 
   useEffect(() => {
     const hash = window.location.hash.substring(1);
@@ -24,10 +27,17 @@ export default function GoogleCallbackPage() {
       return;
     }
 
-    // Guardar en localStorage — la ventana principal escucha el evento "storage"
-    localStorage.setItem(STORAGE_KEY, credential);
-    window.close();
-  }, []);
+    // Llamar al backend, guardar sesión y redirigir
+    authService
+      .googleLogin(credential)
+      .then((response) => {
+        login(response.user, response.token);
+        router.replace("/");
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Error al iniciar sesion con Google");
+      });
+  }, [login, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">
@@ -35,10 +45,10 @@ export default function GoogleCallbackPage() {
         <div className="max-w-md text-center">
           <p className="text-red-500 text-sm mb-4">{error}</p>
           <button
-            onClick={() => window.close()}
-            className="text-sm text-muted underline"
+            onClick={() => router.push("/login")}
+            className="text-sm text-accent underline"
           >
-            Cerrar ventana
+            Volver al login
           </button>
         </div>
       ) : (
