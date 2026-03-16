@@ -9,7 +9,7 @@ interface GoogleLoginButtonProps {
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
 //const REDIRECT_URI = typeof window !== "undefined" ? window.location.origin : "";
-const REDIRECT_URI = process.env.NEXT_PUBLIC_APP_URL ?? (typeof window !== "undefined" ? window.location.origin : "");
+const REDIRECT_URI = process.env.NEXT_PUBLIC_APP_URL_FRONTEND ?? (typeof window !== "undefined" ? window.location.origin : "");
 
 export default function GoogleLoginButton({ onSuccess, onError }: GoogleLoginButtonProps) {
   const callbackRef = useRef(onSuccess);
