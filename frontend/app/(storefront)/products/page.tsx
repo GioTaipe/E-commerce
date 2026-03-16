@@ -5,7 +5,7 @@ import ProductsPageClient from "./ProductsPageClient";
 
 export const revalidate = 60; // 👈 ISR: revalida cada 60s
 export const dynamic = 'force-dynamic'; // 👈 alternativa: siempre SSR
-
+console.log("API URL:", process.env.NEXT_PUBLIC_API_URL); // 👈 aquí
 export default async function ProductsPage() {
   let products: Product[] = [];
   let categories: Category[] = [];
