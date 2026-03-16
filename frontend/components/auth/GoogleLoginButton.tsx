@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 interface GoogleLoginButtonProps {
   onSuccess: (credential: string) => void;
@@ -9,25 +9,32 @@ interface GoogleLoginButtonProps {
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
 const REDIRECT_URI = process.env.NEXT_PUBLIC_APP_URL_FRONTEND ?? (typeof window !== "undefined" ? window.location.origin : "");
+
+const STORAGE_KEY = "google-auth-credential";
+
 export default function GoogleLoginButton({ onSuccess, onError }: GoogleLoginButtonProps) {
   const callbackRef = useRef(onSuccess);
   const errorRef = useRef(onError);
   callbackRef.current = onSuccess;
   errorRef.current = onError;
 
-  const handleMessage = useCallback((event: MessageEvent) => {
-    if (event.origin !== window.location.origin) return;
-    if (event.data?.type === "google-auth-callback" && event.data?.credential) {
-      callbackRef.current(event.data.credential);
-    }
+  useEffect(() => {
+    // Escuchar cambios en localStorage desde el popup
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY && event.newValue) {
+        callbackRef.current(event.newValue);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  useEffect(() => {
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [handleMessage]);
-
   const handleClick = () => {
+    // Limpiar cualquier credential anterior
+    localStorage.removeItem(STORAGE_KEY);
+
     const scope = "openid email profile";
     const authUrl =
       `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -42,9 +49,6 @@ export default function GoogleLoginButton({ onSuccess, onError }: GoogleLoginBut
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
 
-    console.log("[GoogleAuth] authUrl:", authUrl);
-    console.log("[GoogleAuth] REDIRECT_URI:", REDIRECT_URI);
-
     const popup = window.open(
       authUrl,
       "google-auth",
@@ -52,7 +56,6 @@ export default function GoogleLoginButton({ onSuccess, onError }: GoogleLoginBut
     );
 
     if (!popup) {
-      console.error("[GoogleAuth] Popup bloqueado por el navegador");
       errorRef.current?.();
     }
   };

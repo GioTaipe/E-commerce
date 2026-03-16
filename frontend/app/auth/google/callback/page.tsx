@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+const STORAGE_KEY = "google-auth-credential";
+
 export default function GoogleCallbackPage() {
   const [error, setError] = useState<string | null>(null);
 
@@ -13,29 +15,17 @@ export default function GoogleCallbackPage() {
     const errorDescription = params.get("error_description");
 
     if (errorParam) {
-      const msg = `Google OAuth error: ${errorParam} — ${errorDescription ?? "sin descripcion"}`;
-      console.error(msg, Object.fromEntries(params.entries()));
-      setError(msg);
+      setError(`Error de Google: ${errorParam} — ${errorDescription ?? "sin descripcion"}`);
       return;
     }
 
     if (!credential) {
-      const msg = "No se recibio id_token de Google. Hash: " + window.location.hash;
-      console.error(msg);
-      setError(msg);
+      setError("No se recibio id_token de Google.");
       return;
     }
 
-    if (!window.opener) {
-      console.error("window.opener es null — el popup perdio referencia a la ventana principal");
-      setError("Se perdio la conexion con la ventana principal. Intenta de nuevo.");
-      return;
-    }
-
-    window.opener.postMessage(
-      { type: "google-auth-callback", credential },
-      window.location.origin
-    );
+    // Guardar en localStorage — la ventana principal escucha el evento "storage"
+    localStorage.setItem(STORAGE_KEY, credential);
     window.close();
   }, []);
 
