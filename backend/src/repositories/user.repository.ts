@@ -16,8 +16,14 @@ export class UserRepository {
         return prisma.user.findUnique({ where: { googleId } });
     }
 
+    // [FIX] Borra el carrito (y sus items en cascada) antes que el usuario para no
+    // chocar con la FK Cart.userId. Si el usuario tiene pedidos, user.delete lanzará
+    // P2003 (Order.userId es Restrict), que el servicio traduce a un 409 limpio.
     async deleteUser(userId: number) {
-        return prisma.user.delete({ where: { id: userId } });
+        return prisma.$transaction(async (tx) => {
+            await tx.cart.deleteMany({ where: { userId } });
+            return tx.user.delete({ where: { id: userId } });
+        });
     }
 
     async findById(userId: number) {

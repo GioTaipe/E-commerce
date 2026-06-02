@@ -1,22 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  /* Colors */
-  --color-bg: #0a0a0f;
-  --color-ink: #E8E8ED;
-  --color-accent: #3b82f6;
+  /* Colors — Apple-inspired dark palette */
+  --color-bg: #000000;
+  --color-ink: #f5f5f7;
+  --color-accent: #2997ff;
+  --color-accent-2: #0071e3;
   --color-secondary: #06b6d4;
-  --color-surface: #16161f;
-  --color-cream: #1a1a2e;
-  --color-muted: #71717a;
-  --color-border: #27272a;
-  --color-dark: #050507;
+  --color-surface: #0a0a0a;
+  --color-surface-2: #161617;
+  --color-surface-3: #1d1d1f;
+  --color-cream: #161617;
+  --color-pearl: #f5f5f7;
+  --color-muted: #86868b;
+  --color-border: #1d1d1f;
+  --color-dark: #000000;
   --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-pill: rgba(40, 40, 45, 0.72);
+  --color-pill-stroke: rgba(255, 255, 255, 0.08);
 
-  /* Fonts */
-  --font-heading: var(--font-geist-sans), system-ui, sans-serif;
-  --font-body: var(--font-geist-sans), system-ui, sans-serif;
-  --font-logo: var(--font-geist-mono), monospace;
+  /* Fonts — SF Pro stack with Geist fallback */
+  --font-heading: "SF Pro Display", var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-body: "SF Pro Text", var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-logo: "SF Pro Display", var(--font-geist-sans), -apple-system, sans-serif;
 
   /* Animations */
   --animate-marquee: marquee 25s linear infinite;
@@ -76,4 +82,36 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-accent);
+}
+
+/* Hide scrollbar utility (used by horizontal feature carousel) */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Neumorphic primary button (Uiverse-style) */
+.neu-button {
+  background-color: #e0e0e0;
+  border-radius: 9999px;
+  box-shadow: inset 4px 4px 10px #bcbcbc, inset -4px -4px 10px #ffffff;
+  color: #4d4d4d;
+  cursor: pointer;
+  border: 2px solid #cecece;
+  transition: all 0.2s ease-in-out;
+}
+.neu-button:hover:not(:disabled) {
+  transform: scale(1.04);
+}
+.neu-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.neu-button:focus {
+  outline: none;
+}
+.neu-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }

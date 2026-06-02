@@ -76,7 +76,7 @@ export default function CartDrawer() {
               <p className="text-sm text-muted">Inicia sesion para ver tu carrito</p>
               <button
                 onClick={() => { closeCart(); router.push("/login"); }}
-                className="rounded-full bg-dark text-white px-6 py-2.5 text-sm font-medium hover:bg-ink transition-colors"
+                className="neu-button px-6 py-2.5 text-sm font-medium"
               >
                 Iniciar sesion
               </button>
@@ -86,8 +86,8 @@ export default function CartDrawer() {
               <ShoppingBag size={40} className="text-surface" />
               <p className="text-sm text-muted">Tu carrito esta vacio</p>
               <button
-                onClick={() => { closeCart(); router.push("/products"); }}
-                className="rounded-full bg-dark text-white px-6 py-2.5 text-sm font-medium hover:bg-ink transition-colors"
+                onClick={() => { closeCart(); router.push("/#productos"); }}
+                className="neu-button px-6 py-2.5 text-sm font-medium"
               >
                 Explorar tienda
               </button>
@@ -118,7 +118,7 @@ export default function CartDrawer() {
             </div>
             <button
               onClick={handleCheckout}
-              className="w-full rounded-full bg-dark text-white py-3 text-sm font-semibold uppercase tracking-widest hover:bg-ink transition-colors"
+              className="neu-button w-full py-3 text-[14px] font-medium"
             >
               Ir al carrito
             </button>

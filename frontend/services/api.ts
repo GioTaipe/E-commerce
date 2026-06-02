@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://e-commerce-b2dr.onrender.com";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 // [FIX] Lee el token desde el mismo store persistido por Zustand ("auth-storage")
 // en vez de una clave separada — fuente de verdad única para el token

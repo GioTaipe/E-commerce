@@ -15,23 +15,29 @@ export class ProductRepository {
         });
     }
 
+    // Soft delete: marca el producto como inactivo para preservar el historial
+    // de pedidos (OrderItem.product tiene onDelete: Restrict).
     async delete(id: number) {
-        return prisma.product.delete({
+        return prisma.product.update({
             where: { id },
+            data: { isActive: false },
         });
     }
 
-    async findAll() {
-        return prisma.product.findMany({
-            include:{
-                category:true
-            }
-        });
+    async findAll(options: { includeInactive?: boolean } = {}) {
+        const args: Prisma.ProductFindManyArgs = {
+            include: { category: true },
+        };
+        if (!options.includeInactive) {
+            args.where = { isActive: true };
+        }
+        return prisma.product.findMany(args);
     }
 
     async findById(id: number) {
         return prisma.product.findUnique({
             where: { id },
+            include: { category: true },
         });
     }
 }

@@ -48,7 +48,10 @@ model Product {
   description String?
   price       Decimal     @db.Decimal(10, 2)
   imageUrl    String
+  imageUrl2   String?
+  imageUrl3   String?
   stock       Int
+  isActive    Boolean     @default(true)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   categoryId  Int?
@@ -58,6 +61,7 @@ model Product {
 
   @@index([categoryId], map: "Product_categoryId_fkey")
   @@index([name])
+  @@index([isActive])
 }
 
 model Cart {

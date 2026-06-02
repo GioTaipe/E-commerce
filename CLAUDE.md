@@ -14,7 +14,7 @@ Full-stack e-commerce app ("MyShop") with a REST API backend and Next.js fronten
 ### Backend (`cd backend/`)
 
 ```bash
-npm run dev              # Dev server with nodemon + tsx (hot-reload, port 3000)
+npm run dev              # Dev server with nodemon + tsx (hot-reload, port 3001)
 npm run build            # Compile TypeScript → dist/
 npm run start            # Run compiled output (node dist/server.js)
 npm run test             # Run Jest tests
@@ -33,7 +33,7 @@ npm run lint    # ESLint
 ### Docker (from repo root)
 
 ```bash
-docker-compose up   # MySQL (3306), backend (3000), frontend (4200)
+docker-compose up   # MySQL (3306), backend (3001), frontend (4200)
 ```
 
 ## Architecture

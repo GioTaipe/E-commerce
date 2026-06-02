@@ -23,6 +23,12 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
+    environment:
+      # Sobrescribe el DATABASE_URL de backend/.env (host localhost) por el host de red
+      # interna de compose ("mysql"). Toma el valor del .env raiz.
+      DATABASE_URL: ${DATABASE_URL}
+      # El contenedor escucha en 3000 (en local con `npm run dev` usa el PORT de backend/.env = 3001).
+      PORT: 3000
     depends_on:
       mysql:
         condition: service_healthy

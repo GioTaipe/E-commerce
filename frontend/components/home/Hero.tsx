@@ -1,97 +1,53 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Product } from "@/types/product";
 
 interface HeroProps {
   products: Product[];
 }
 
-export default function Hero({ products }: HeroProps) {
-  const heroImages = products.slice(0, 4);
-
+export default function Hero({ products: _products }: HeroProps) {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-16 lg:py-24">
-      <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
-        {/* Left — Text */}
-        <div className="space-y-6">
-          <span className="inline-block rounded-full bg-cream px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
-            Ofertas de temporada
+    <section id="inicio" className="relative h-[calc(100vh-64px-50px)] min-h-[640px] overflow-hidden bg-black isolate scroll-mt-[110px]">
+      <video
+        src="/hero.mp4"
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      />
+      {/* Subtle bottom gradient for legibility */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-[1]"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0) 55%, rgba(0,0,0,0.25) 100%)",
+        }}
+      />
+
+      <div className="absolute z-[2] left-0 right-0 bottom-16 flex flex-col items-center text-center px-[22px]">
+        <p className="font-heading text-[21px] font-semibold uppercase tracking-[0.18em] text-ink mb-[14px] flex items-center gap-2.5 m-0">
+          <span className="inline-block w-[18px] h-[18px] rounded-[4px] bg-ink text-black font-heading text-[12px] font-bold leading-[18px] text-center">
+            T
           </span>
+          TECHZONE PRO
+        </p>
 
-          <h1 className="font-heading text-5xl leading-tight tracking-tight sm:text-6xl lg:text-7xl">
-            Potencia tu<br />
-            setup <em className="text-accent">al maximo</em>
-          </h1>
+        <h1 className="font-heading font-semibold text-[48px] sm:text-[64px] lg:text-[80px] leading-[1.05] tracking-[-0.015em] m-0 mb-7 text-white max-w-[14ch]">
+          Potencia sin
+          <br />
+          límites.
+        </h1>
 
-          <p className="max-w-md text-base leading-relaxed text-muted">
-            Descubre laptops, PC gaming, perifericos y accesorios de las
-            mejores marcas. Rendimiento y calidad garantizados.
-          </p>
-
-          <div className="flex flex-wrap gap-4 pt-2">
-            <Link
-              href="/products"
-              className="inline-flex items-center rounded-full bg-accent px-8 py-3.5 text-sm font-semibold uppercase tracking-widest text-white hover:bg-accent/90 transition-colors"
-            >
-              Ver productos
-            </Link>
-            <Link
-              href="/products"
-              className="inline-flex items-center rounded-full border border-border px-8 py-3.5 text-sm font-semibold uppercase tracking-widest text-ink hover:bg-cream transition-colors"
-            >
-              Ofertas destacadas
-            </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="flex gap-10 pt-6 border-t border-border">
-            <div>
-              <p className="font-heading text-3xl font-semibold">500+</p>
-              <p className="text-xs text-muted uppercase tracking-wide">Productos</p>
-            </div>
-            <div>
-              <p className="font-heading text-3xl font-semibold">80+</p>
-              <p className="text-xs text-muted uppercase tracking-wide">Marcas</p>
-            </div>
-            <div>
-              <p className="font-heading text-3xl font-semibold">25k+</p>
-              <p className="text-xs text-muted uppercase tracking-wide">Clientes</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right — Image grid 2x2 */}
-        <div className="grid grid-cols-2 gap-4">
-          {heroImages.map((product, i) => (
-            <div
-              key={product.id}
-              className="relative overflow-hidden rounded-2xl bg-cream aspect-square"
-            >
-              {product.imageUrl ? (
-                <Image
-                  src={product.imageUrl}
-                  alt={product.name}
-                  fill
-                  className="object-contain p-4"
-                  sizes="(max-width: 1024px) 50vw, 25vw"
-                  priority={i < 2}
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-surface font-heading text-lg">
-                  TechZone
-                </div>
-              )}
-            </div>
-          ))}
-          {/* Fill remaining if less than 4 products */}
-          {Array.from({ length: Math.max(0, 4 - heroImages.length) }).map((_, i) => (
-            <div
-              key={`placeholder-${i}`}
-              className="relative aspect-square overflow-hidden rounded-2xl bg-cream flex items-center justify-center"
-            >
-              <span className="text-surface font-heading text-lg">TechZone</span>
-            </div>
-          ))}
+        <div className="inline-flex items-center gap-2.5 bg-[rgba(40,40,45,0.72)] border border-white/[0.08] backdrop-blur-[20px] pl-[22px] pr-1.5 py-1.5 rounded-full text-[15px] text-ink">
+          <strong className="font-medium">Desde 1.299 €</strong>
+          <Link
+            href="/#productos"
+            className="neu-button px-[18px] py-2 text-[14px] font-medium"
+          >
+            Comprar
+          </Link>
         </div>
       </div>
     </section>

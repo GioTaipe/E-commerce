@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
         hostname: "res.cloudinary.com",
       },
     ],
+    // Sin `search` => acepta cualquier query string (incluye nuestro cache-buster ?v=N).
+    localPatterns: [
+      {
+        pathname: "/**",
+      },
+    ],
   },
 };
 

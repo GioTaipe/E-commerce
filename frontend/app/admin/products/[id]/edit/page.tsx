@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Upload, ArrowLeft } from "lucide-react";
+import { Upload, ArrowLeft, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { productService } from "@/services/product.service";
 import { categoryService } from "@/services/category.service";
 import { useToastStore } from "@/store/toast.store";
 import PageHeader from "@/components/admin/PageHeader";
-import type { Category, Product } from "@/types/product";
+import type { Category } from "@/types/product";
+
+type ImageSlot = "image" | "image2" | "image3";
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -20,7 +22,6 @@ export default function EditProductPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [preview, setPreview] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -29,7 +30,23 @@ export default function EditProductPage() {
     stock: "",
     categoryId: "",
   });
-  const [image, setImage] = useState<File | null>(null);
+  const [images, setImages] = useState<Record<ImageSlot, File | null>>({
+    image: null,
+    image2: null,
+    image3: null,
+  });
+  const [previews, setPreviews] = useState<Record<ImageSlot, string | null>>({
+    image: null,
+    image2: null,
+    image3: null,
+  });
+  // Marcado true cuando el usuario pulsa X sobre una imagen existente.
+  // Se envía como `removeImage{N}=true` al backend para que la borre.
+  const [removed, setRemoved] = useState<Record<ImageSlot, boolean>>({
+    image: false,
+    image2: false,
+    image3: false,
+  });
 
   useEffect(() => {
     const load = async () => {
@@ -46,7 +63,11 @@ export default function EditProductPage() {
           stock: String(product.stock),
           categoryId: product.categoryId ? String(product.categoryId) : "",
         });
-        if (product.imageUrl) setPreview(product.imageUrl);
+        setPreviews({
+          image: product.imageUrl ?? null,
+          image2: product.imageUrl2 ?? null,
+          image3: product.imageUrl3 ?? null,
+        });
       } catch {
         addToast("Error cargando producto", "error");
         router.push("/admin/products");
@@ -63,14 +84,19 @@ export default function EditProductPage() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (slot: ImageSlot) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
-    setImage(file);
-
+    setImages((prev) => ({ ...prev, [slot]: file }));
     if (file) {
-      const url = URL.createObjectURL(file);
-      setPreview(url);
+      setPreviews((prev) => ({ ...prev, [slot]: URL.createObjectURL(file) }));
+      setRemoved((prev) => ({ ...prev, [slot]: false }));
     }
+  };
+
+  const handleRemove = (slot: ImageSlot) => () => {
+    setImages((prev) => ({ ...prev, [slot]: null }));
+    setPreviews((prev) => ({ ...prev, [slot]: null }));
+    setRemoved((prev) => ({ ...prev, [slot]: true }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,6 +104,15 @@ export default function EditProductPage() {
 
     if (!form.name || !form.price || !form.stock) {
       addToast("Completa los campos obligatorios", "error");
+      return;
+    }
+
+    // Validación: al menos una imagen tras los cambios.
+    const slotsRemainingCount = (["image", "image2", "image3"] as ImageSlot[])
+      .filter((s) => images[s] || previews[s])
+      .length;
+    if (slotsRemainingCount === 0) {
+      addToast("El producto debe conservar al menos una imagen", "error");
       return;
     }
 
@@ -89,7 +124,15 @@ export default function EditProductPage() {
       formData.append("price", form.price);
       formData.append("stock", form.stock);
       if (form.categoryId) formData.append("categoryId", form.categoryId);
-      if (image) formData.append("image", image);
+
+      (["image", "image2", "image3"] as ImageSlot[]).forEach((slot) => {
+        const flagKey = slot === "image" ? "removeImage" : slot === "image2" ? "removeImage2" : "removeImage3";
+        if (images[slot]) {
+          formData.append(slot, images[slot] as File);
+        } else if (removed[slot]) {
+          formData.append(flagKey, "true");
+        }
+      });
 
       await productService.update(id, formData);
       addToast("Producto actualizado");
@@ -109,6 +152,12 @@ export default function EditProductPage() {
     );
   }
 
+  const slots: { key: ImageSlot; label: string }[] = [
+    { key: "image", label: "Imagen principal" },
+    { key: "image2", label: "Imagen secundaria" },
+    { key: "image3", label: "Imagen terciaria" },
+  ];
+
   return (
     <div>
       <PageHeader
@@ -127,7 +176,6 @@ export default function EditProductPage() {
 
       <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-6">
         <div className="rounded-xl border border-border bg-bg p-6 space-y-5">
-          {/* Nombre */}
           <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
               Nombre *
@@ -141,7 +189,6 @@ export default function EditProductPage() {
             />
           </div>
 
-          {/* Descripcion */}
           <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
               Descripcion
@@ -155,7 +202,6 @@ export default function EditProductPage() {
             />
           </div>
 
-          {/* Precio + Stock */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
@@ -186,7 +232,6 @@ export default function EditProductPage() {
             </div>
           </div>
 
-          {/* Categoria */}
           <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
               Categoria
@@ -206,26 +251,49 @@ export default function EditProductPage() {
             </select>
           </div>
 
-          {/* Imagen */}
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
-              Imagen
+          {/* 3 image slots */}
+          <div className="space-y-3">
+            <label className="block text-xs font-semibold uppercase tracking-wide text-muted">
+              Imágenes (hasta 3) — sube una nueva para reemplazarla o pulsa la X para eliminarla
             </label>
-            <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border px-4 py-4 text-sm text-muted hover:border-accent transition-colors">
-              <Upload size={18} />
-              <span>{image ? image.name : "Cambiar imagen (opcional)"}</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-              />
-            </label>
-            {preview && (
-              <div className="relative mt-3 h-40 w-40 overflow-hidden rounded-lg border border-border">
-                <Image src={preview} alt="Preview" fill className="object-cover" sizes="160px" />
-              </div>
-            )}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {slots.map(({ key, label }) => (
+                <div key={key}>
+                  <div className="relative">
+                    <label className="relative flex h-32 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border text-xs text-muted hover:border-accent transition-colors overflow-hidden">
+                      {previews[key] ? (
+                        <Image src={previews[key] as string} alt={label} fill className="object-cover" sizes="200px" />
+                      ) : (
+                        <>
+                          <Upload size={18} />
+                          <span className="text-center px-2">{label}</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange(key)}
+                        className="hidden"
+                      />
+                    </label>
+                    {previews[key] && (
+                      <button
+                        type="button"
+                        onClick={handleRemove(key)}
+                        aria-label={`Eliminar ${label}`}
+                        title="Eliminar imagen"
+                        className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm text-white flex items-center justify-center hover:bg-red-500 transition-colors shadow"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted truncate">
+                    {images[key]?.name ?? (previews[key] ? "Imagen actual" : removed[key] ? "Se eliminará al guardar" : "Vacío")}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

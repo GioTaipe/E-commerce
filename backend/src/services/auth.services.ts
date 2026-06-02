@@ -5,6 +5,7 @@ import { generateToken } from "../utils/jwt.js";
 import { CreateUserDto, CreateUserWithRoleDto, LoginUserDto } from "../dto/auth.dto.js";
 import { ConflictError, UnauthorizedError, NotFoundError } from "../utils/errors.js";
 import { GoogleTokenService } from "./google-token.service.js";
+import { Prisma } from "@prisma/client";
 
 export class AuthService {
   constructor(
@@ -69,9 +70,20 @@ export class AuthService {
   }
 
   async deleteUser(userId: number) {
-    const user = await this.userRepo.deleteUser(userId);
-    if (!user) throw new NotFoundError("Usuario no encontrado");
-    return user;
+    const existing = await this.userRepo.findById(userId);
+    if (!existing) throw new NotFoundError("Usuario no encontrado");
+
+    try {
+      return await this.userRepo.deleteUser(userId);
+    } catch (err) {
+      // P2003: violación de FK (el usuario tiene pedidos asociados, Order.userId es Restrict)
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2003") {
+        throw new ConflictError(
+          "No puedes eliminar tu cuenta porque tiene pedidos asociados."
+        );
+      }
+      throw err;
+    }
   }
   async googleLogin(credential: string) {
     const payload = await this.googleTokenService.verifyIdToken(credential);

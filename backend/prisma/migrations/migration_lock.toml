@@ -1,0 +1,2 @@
+# Por favor NO editar este archivo manualmente; Prisma lo gestiona.
+provider = "mysql"

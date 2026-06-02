@@ -44,6 +44,11 @@ app.use("/products", productRoutes);
 app.use("/cart", cartRoutes);
 app.use("/orders", orderRoutes);
 
+// Ruta no encontrada: responde en el mismo formato { error } que el resto de la API
+app.use((req, res) => {
+  res.status(404).json({ error: `Ruta no encontrada: ${req.method} ${req.originalUrl}` });
+});
+
 // Middleware de errores
 app.use(errorHandler);
 

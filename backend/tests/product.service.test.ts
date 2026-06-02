@@ -87,19 +87,38 @@ describe("ProductService", () => {
   });
 
   describe("createProduct", () => {
-    it("debe subir imagen a Cloudinary y crear el producto", async () => {
+    it("debe subir imagen principal y crear el producto", async () => {
       const dto = { name: "Nuevo", description: "Desc", price: 50, stock: 10, categoryId: 1 };
       const file = createMockFile();
       mockRepo.create.mockResolvedValue({ id: 1, ...dto, imageUrl: CLOUDINARY_URL });
 
-      const result = await service.createProduct(dto as any, file);
+      const result = await service.createProduct(dto as any, { image: file });
 
       expect(mockUpload).toHaveBeenCalledWith(file);
       expect(mockRepo.create).toHaveBeenCalledWith(expect.objectContaining({
         ...dto,
         imageUrl: CLOUDINARY_URL,
+        imageUrl2: null,
+        imageUrl3: null,
       }));
       expect(result.id).toBe(1);
+    });
+
+    it("debe subir las 3 imágenes cuando se proporcionan", async () => {
+      const dto = { name: "Nuevo", description: "Desc", price: 50, stock: 10, categoryId: 1 };
+      const image = createMockFile("1.jpg");
+      const image2 = createMockFile("2.jpg");
+      const image3 = createMockFile("3.jpg");
+      mockRepo.create.mockResolvedValue({ id: 1 });
+
+      await service.createProduct(dto as any, { image, image2, image3 });
+
+      expect(mockUpload).toHaveBeenCalledTimes(3);
+      expect(mockRepo.create).toHaveBeenCalledWith(expect.objectContaining({
+        imageUrl: CLOUDINARY_URL,
+        imageUrl2: CLOUDINARY_URL,
+        imageUrl3: CLOUDINARY_URL,
+      }));
     });
   });
 
@@ -114,17 +133,19 @@ describe("ProductService", () => {
       expect(mockUpload).not.toHaveBeenCalled();
     });
 
-    it("debe subir nueva imagen y eliminar la anterior", async () => {
+    it("debe subir nueva imagen principal y eliminar la anterior", async () => {
       const oldUrl = "https://res.cloudinary.com/demo/image/upload/v1234567890/ECOMMERCE/PRODUCTS/old.jpg";
       mockRepo.findById.mockResolvedValue({
         id: 1,
         name: "Prod",
         imageUrl: oldUrl,
+        imageUrl2: null,
+        imageUrl3: null,
       });
       mockRepo.update.mockResolvedValue({ id: 1, imageUrl: CLOUDINARY_URL });
 
       const file = createMockFile("new.jpg");
-      await service.updateProduct(1, { imageUrl: file });
+      await service.updateProduct(1, { image: file });
 
       expect(mockExtract).toHaveBeenCalledWith(oldUrl);
       expect(mockDelete).toHaveBeenCalledWith("ECOMMERCE/PRODUCTS/old");
@@ -140,17 +161,16 @@ describe("ProductService", () => {
   });
 
   describe("deleteProduct", () => {
-    it("debe eliminar la imagen de Cloudinary y luego el producto", async () => {
+    it("debe hacer soft delete sin tocar Cloudinary", async () => {
       const productUrl = "https://res.cloudinary.com/demo/image/upload/v1234567890/ECOMMERCE/PRODUCTS/img.jpg";
       mockRepo.findById.mockResolvedValue({ id: 1, imageUrl: productUrl });
-      mockRepo.delete.mockResolvedValue({ id: 1 });
+      mockRepo.delete.mockResolvedValue({ id: 1, isActive: false });
 
       const result = await service.deleteProduct(1);
 
-      expect(mockExtract).toHaveBeenCalledWith(productUrl);
-      expect(mockDelete).toHaveBeenCalledWith("ECOMMERCE/PRODUCTS/img");
+      expect(mockDelete).not.toHaveBeenCalled();
       expect(mockRepo.delete).toHaveBeenCalledWith(1);
-      expect(result).toEqual({ id: 1 });
+      expect(result).toEqual({ id: 1, isActive: false });
     });
 
     it("debe lanzar NotFoundError si el producto no existe", async () => {
@@ -158,17 +178,6 @@ describe("ProductService", () => {
 
       await expect(service.deleteProduct(999))
         .rejects.toThrow(NotFoundError);
-    });
-
-    it("debe eliminar el producto aunque falle la eliminación de imagen", async () => {
-      mockRepo.findById.mockResolvedValue({ id: 1, imageUrl: "https://res.cloudinary.com/demo/image/upload/v1/ECOMMERCE/PRODUCTS/x.jpg" });
-      mockDelete.mockRejectedValue(new Error("Cloudinary error"));
-      mockRepo.delete.mockResolvedValue({ id: 1 });
-
-      const result = await service.deleteProduct(1);
-
-      expect(mockRepo.delete).toHaveBeenCalledWith(1);
-      expect(result).toEqual({ id: 1 });
     });
   });
 });

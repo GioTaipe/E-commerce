@@ -4,8 +4,9 @@ import {
   Min,
   IsNumber,
   IsOptional,
+  IsBoolean,
 } from "class-validator";
-import { Type } from "class-transformer";
+import { Type, Transform } from "class-transformer";
 
 /**
  * 🟢 Crear producto
@@ -53,6 +54,12 @@ export class UpdateProductDto {
   price?: number;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  stock?: number;
+
+  @IsOptional()
   @IsString()
   imageUrl?: string;
 
@@ -61,6 +68,23 @@ export class UpdateProductDto {
   @IsInt()
   @Min(1, { message: "Debe proporcionar un ID de categoría válido" })
   categoryId?: number;
+
+  // Flags para eliminar imágenes de cada slot. El servicio borra de Cloudinary
+  // y compacta los slots restantes (la siguiente imagen disponible promueve).
+  @IsOptional()
+  @Transform(({ value }) => value === "true" || value === true)
+  @IsBoolean()
+  removeImage?: boolean;
+
+  @IsOptional()
+  @Transform(({ value }) => value === "true" || value === true)
+  @IsBoolean()
+  removeImage2?: boolean;
+
+  @IsOptional()
+  @Transform(({ value }) => value === "true" || value === true)
+  @IsBoolean()
+  removeImage3?: boolean;
 }
 
 /**
