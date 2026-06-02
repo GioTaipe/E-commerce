@@ -19,6 +19,10 @@ type RequestOptions = Omit<RequestInit, "body"> & {
   body?: object | FormData;
 };
 
+// Tiempo máximo de espera por respuesta del backend. Evita que la UI se quede
+// colgada indefinidamente si el servidor o la base de datos no responden.
+const REQUEST_TIMEOUT_MS = 20000;
+
 async function request<T>(
   endpoint: string,
   options: RequestOptions = {}
@@ -34,16 +38,31 @@ async function request<T>(
     headers["Content-Type"] = "application/json";
   }
 
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers: { ...headers, ...(options.headers as Record<string, string> ?? {}) },
-    body:
-      options.body instanceof FormData
-        ? options.body
-        : options.body
-        ? JSON.stringify(options.body)
-        : undefined,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${endpoint}`, {
+      ...options,
+      signal: controller.signal,
+      headers: { ...headers, ...(options.headers as Record<string, string> ?? {}) },
+      body:
+        options.body instanceof FormData
+          ? options.body
+          : options.body
+          ? JSON.stringify(options.body)
+          : undefined,
+    });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error("El servidor tardó demasiado en responder. Inténtalo de nuevo en unos momentos.");
+    }
+    // Fallo de red / CORS / servidor inalcanzable
+    throw new Error("No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.");
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({ error: "Error desconocido" }));
